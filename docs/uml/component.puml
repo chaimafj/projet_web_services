@@ -1,0 +1,28 @@
+@startuml
+skinparam componentStyle rectangle
+
+component "GraphQL Gateway" as Gateway
+component "Auth Service" as Auth
+component "Vehicle Service" as Vehicle
+component "Traffic Service" as Traffic
+component "Incident Service" as Incident
+component "Notification Service" as Notify
+
+database "PostgreSQL Auth" as DBA
+database "PostgreSQL Vehicle" as DBV
+database "PostgreSQL Traffic" as DBT
+database "PostgreSQL Incident" as DBI
+database "PostgreSQL Notification" as DBN
+
+Gateway --> Auth
+Gateway --> Vehicle
+Gateway --> Traffic
+Gateway --> Incident
+Gateway --> Notify
+
+Auth --> DBA
+Vehicle --> DBV
+Traffic --> DBT
+Incident --> DBI
+Notify --> DBN
+@enduml

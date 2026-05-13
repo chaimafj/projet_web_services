@@ -1,0 +1,15 @@
+{
+  "name": "urban-traffic-platform",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "gateway",
+    "services/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present --parallel",
+    "start": "npm run start --workspaces --if-present --parallel",
+    "test": "npm run test --workspaces --if-present",
+    "prisma:generate": "npm run prisma:generate --workspaces --if-present"
+  }
+}

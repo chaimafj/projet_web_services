@@ -1,0 +1,32 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum IncidentType {
+  ACCIDENT
+  ROADWORK
+  ROAD_CLOSED
+  TRAFFIC_JAM
+}
+
+enum IncidentStatus {
+  REPORTED
+  IN_PROGRESS
+  RESOLVED
+}
+
+model Incident {
+  id          Int            @id @default(autoincrement())
+  title       String
+  description String
+  zoneName    String
+  type        IncidentType
+  status      IncidentStatus @default(REPORTED)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}

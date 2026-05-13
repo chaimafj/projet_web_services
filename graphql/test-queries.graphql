@@ -1,0 +1,120 @@
+# Register
+mutation Register {
+  register(email: "admin@city.com", password: "admin123", role: "ADMIN") {
+    id
+    email
+    role
+  }
+}
+
+# Login
+mutation Login {
+  login(email: "admin@city.com", password: "admin123") {
+    token
+    role
+  }
+}
+
+# Add vehicle
+mutation AddVehicle {
+  addVehicle(plateNumber: "123TUN456", brand: "Toyota", model: "Corolla") {
+    id
+    plateNumber
+    brand
+    model
+  }
+}
+
+# Add GPS position
+mutation AddPosition {
+  addVehiclePosition(vehicleId: 1, latitude: 36.8065, longitude: 10.1815, speed: 50) {
+    id
+    vehicleId
+    latitude
+    longitude
+    speed
+    timestamp
+  }
+}
+
+# Create zone and measure density
+mutation CreateZone {
+  createZone(name: "Centre Ville", maxCapacity: 100) {
+    id
+    name
+    maxCapacity
+    trafficLevel
+  }
+}
+
+mutation MeasureDensity {
+  measureDensity(zoneId: 1, currentCount: 90) {
+    id
+    name
+    currentCount
+    maxCapacity
+    trafficLevel
+  }
+}
+
+# Declare incident and update status
+mutation DeclareIncident {
+  declareIncident(
+    title: "Traffic Jam at Main Road"
+    description: "Heavy congestion in peak hour"
+    zoneName: "Centre Ville"
+    type: "TRAFFIC_JAM"
+  ) {
+    id
+    title
+    type
+    status
+  }
+}
+
+mutation UpdateIncident {
+  updateIncidentStatus(incidentId: 1, status: "IN_PROGRESS") {
+    id
+    status
+    updatedAt
+  }
+}
+
+# Notification
+mutation SendNotification {
+  sendNotification(userEmail: "operator@city.com", message: "Congestion detected in Centre Ville") {
+    id
+    userEmail
+    message
+    read
+  }
+}
+
+# Queries
+query Vehicles {
+  vehicles {
+    id
+    plateNumber
+    brand
+    model
+  }
+}
+
+query CongestedZones {
+  congestedZones {
+    id
+    name
+    trafficLevel
+    currentCount
+    maxCapacity
+  }
+}
+
+query Incidents {
+  incidents {
+    id
+    title
+    type
+    status
+  }
+}
