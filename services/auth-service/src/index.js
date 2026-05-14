@@ -9,6 +9,8 @@ const { PrismaClient } = require("@prisma/client");
 const { z } = require("zod");
 
 const prisma = new PrismaClient();
+const inMemoryUsers = [];
+let nextInMemoryUserId = 1;
 const app = express();
 
 app.use(cors());
@@ -26,6 +28,34 @@ const loginSchema = z.object({
   password: z.string().min(6)
 });
 
+function hasPrismaUserModel() {
+  return Boolean(prisma.user && typeof prisma.user.findUnique === "function");
+}
+
+async function findUserByEmail(email) {
+  if (hasPrismaUserModel()) {
+    return prisma.user.findUnique({ where: { email } });
+  }
+
+  return inMemoryUsers.find((user) => user.email === email) || null;
+}
+
+async function createUser(data) {
+  if (hasPrismaUserModel()) {
+    return prisma.user.create({ data });
+  }
+
+  const user = {
+    id: nextInMemoryUserId++,
+    email: data.email,
+    passwordHash: data.passwordHash,
+    role: data.role,
+    createdAt: new Date()
+  };
+  inMemoryUsers.push(user);
+  return user;
+}
+
 app.get("/health", async (req, res) => {
   res.json({ service: "auth-service", status: "ok" });
 });
@@ -33,18 +63,16 @@ app.get("/health", async (req, res) => {
 app.post("/auth/register", async (req, res, next) => {
   try {
     const payload = registerSchema.parse(req.body);
-    const existing = await prisma.user.findUnique({ where: { email: payload.email } });
+    const existing = await findUserByEmail(payload.email);
     if (existing) {
       return res.status(409).json({ message: "Email already exists" });
     }
 
     const passwordHash = await bcrypt.hash(payload.password, 10);
-    const user = await prisma.user.create({
-      data: {
-        email: payload.email,
-        passwordHash,
-        role: payload.role || "OPERATOR"
-      }
+    const user = await createUser({
+      email: payload.email,
+      passwordHash,
+      role: payload.role || "OPERATOR"
     });
 
     return res.status(201).json({
@@ -61,7 +89,7 @@ app.post("/auth/register", async (req, res, next) => {
 app.post("/auth/login", async (req, res, next) => {
   try {
     const payload = loginSchema.parse(req.body);
-    const user = await prisma.user.findUnique({ where: { email: payload.email } });
+    const user = await findUserByEmail(payload.email);
 
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });

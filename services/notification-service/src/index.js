@@ -10,6 +10,8 @@ const { PrismaClient } = require("@prisma/client");
 const { z } = require("zod");
 
 const prisma = new PrismaClient();
+const inMemoryNotifications = [];
+let nextNotificationId = 1;
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
@@ -41,10 +43,66 @@ app.get("/health", (req, res) => {
   res.json({ service: "notification-service", status: "ok" });
 });
 
+async function createNotification(data) {
+  try {
+    return await prisma.notification.create({ data });
+  } catch (error) {
+    const notification = {
+      id: nextNotificationId++,
+      userEmail: data.userEmail,
+      message: data.message,
+      read: false,
+      createdAt: new Date()
+    };
+    inMemoryNotifications.push(notification);
+    return notification;
+  }
+}
+
+async function listNotifications(userEmail) {
+  try {
+    const where = userEmail ? { userEmail } : {};
+    return await prisma.notification.findMany({
+      where,
+      orderBy: { id: "desc" }
+    });
+  } catch (error) {
+    const filtered = userEmail
+      ? inMemoryNotifications.filter((notification) => notification.userEmail === userEmail)
+      : [...inMemoryNotifications];
+    return filtered.sort((left, right) => right.id - left.id);
+  }
+}
+
+async function findNotificationById(id) {
+  try {
+    return await prisma.notification.findUnique({ where: { id } });
+  } catch (error) {
+    return inMemoryNotifications.find((notification) => notification.id === id) || null;
+  }
+}
+
+async function markNotificationAsRead(id) {
+  try {
+    return await prisma.notification.update({
+      where: { id },
+      data: { read: true }
+    });
+  } catch (error) {
+    const notification = inMemoryNotifications.find((item) => item.id === id);
+    if (!notification) {
+      return null;
+    }
+
+    notification.read = true;
+    return notification;
+  }
+}
+
 app.post("/notifications", requireAuth, async (req, res, next) => {
   try {
     const payload = notificationSchema.parse(req.body);
-    const notification = await prisma.notification.create({ data: payload });
+    const notification = await createNotification(payload);
     io.emit("notification:new", notification);
     return res.status(201).json(notification);
   } catch (error) {
@@ -54,11 +112,8 @@ app.post("/notifications", requireAuth, async (req, res, next) => {
 
 app.get("/notifications", requireAuth, async (req, res, next) => {
   try {
-    const where = req.query.userEmail ? { userEmail: String(req.query.userEmail) } : {};
-    const notifications = await prisma.notification.findMany({
-      where,
-      orderBy: { id: "desc" }
-    });
+    const userEmail = req.query.userEmail ? String(req.query.userEmail) : undefined;
+    const notifications = await listNotifications(userEmail);
     return res.json(notifications);
   } catch (error) {
     next(error);
@@ -68,15 +123,15 @@ app.get("/notifications", requireAuth, async (req, res, next) => {
 app.patch("/notifications/:id/read", requireAuth, async (req, res, next) => {
   try {
     const id = Number(req.params.id);
-    const notification = await prisma.notification.findUnique({ where: { id } });
+    const notification = await findNotificationById(id);
     if (!notification) {
       return res.status(404).json({ message: "Notification not found" });
     }
 
-    const updated = await prisma.notification.update({
-      where: { id },
-      data: { read: true }
-    });
+    const updated = await markNotificationAsRead(id);
+    if (!updated) {
+      return res.status(404).json({ message: "Notification not found" });
+    }
 
     io.emit("notification:read", updated);
     return res.json(updated);
