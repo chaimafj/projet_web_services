@@ -7,8 +7,10 @@
     "services/*"
   ],
   "scripts": {
-    "dev": "npm run dev --workspaces --if-present --parallel",
-    "start": "npm run start --workspaces --if-present --parallel",
+    "dev": "npm run dev --workspace gateway --workspace auth-service --workspace vehicle-service --workspace traffic-service --workspace incident-service --workspace notification-service --if-present --parallel",
+    "start": "npm run start --workspace gateway --workspace auth-service --workspace vehicle-service --workspace traffic-service --workspace incident-service --workspace notification-service --if-present --parallel",
+    "stop": "powershell -ExecutionPolicy Bypass -File ./scripts/stop-dev.ps1",
+    "smoke:e2e": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-e2e.ps1",
     "test": "npm run test --workspaces --if-present",
     "prisma:generate": "npm run prisma:generate --workspaces --if-present"
   }

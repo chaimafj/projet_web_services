@@ -68,6 +68,16 @@ cd ..\..
 npm run dev
 ```
 
+## Quick Validation
+- End-to-end smoke test (GraphQL register/login/business flow):
+```bash
+npm run smoke:e2e
+```
+- Stop all local Node services on ports `4000-4005`:
+```bash
+npm run stop
+```
+
 ## GraphQL Endpoint
 - URL: `http://localhost:4000/graphql`
 - See test operations in `graphql/test-queries.graphql`
